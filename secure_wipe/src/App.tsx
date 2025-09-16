@@ -5,6 +5,7 @@ import "./App.css";
 import Register from "./Register";
 import Login from "./Login";
 import BootableModal from "./BootableModal";
+import LandingPage from "./LandingPage";
 
 interface Drive {
   name: string;
@@ -24,8 +25,8 @@ interface Certificate {
 
 function App() {
   const [authState, setAuthState] = useState<
-    "register" | "login" | "authenticated"
-  >("register");
+    "landing" | "register" | "login" | "authenticated"
+  >("landing");
   const [drives, setDrives] = useState<Drive[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pin, setPin] = useState("");
@@ -222,6 +223,14 @@ function App() {
       alert(`❌ Error: ${err}`);
     }
   };
+
+  if (authState === "landing") {
+  return (
+    <LandingPage
+      onLogin={() => setAuthState("login")}          // button goes to Login
+    />
+  );
+}
 
   // Show authentication pages if not authenticated
   if (authState === "register") {
