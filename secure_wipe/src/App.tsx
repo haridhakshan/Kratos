@@ -5,7 +5,6 @@ import "./App.css";
 import Register from "./Register";
 import Login from "./Login";
 import BootableModal from "./BootableModal";
-import LandingPage from "./LandingPage";
 
 interface Drive {
   name: string;
@@ -32,7 +31,7 @@ function App() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [showSettings, setShowSettings] = useState(false);
-  const [theme, setTheme] = useState("dark-professional");
+  const theme = "rose-cream";
   const [showProfile, setShowProfile] = useState(false);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -71,6 +70,12 @@ function App() {
   const [usbDrives, setUsbDrives] = useState<string[]>([]);
   const [selectedUsb, setSelectedUsb] = useState<string>("");
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showPxeBootModal, setShowPxeBootModal] = useState(false);
+  const [showGeofenceModal, setShowGeofenceModal] = useState(false);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [unlockPin, setUnlockPin] = useState("");
+  const [unlockError, setUnlockError] = useState("");
+
 
   const toggleProfile = () => setShowProfile(!showProfile);
   const closeProfile = () => setShowProfile(false);
@@ -259,7 +264,7 @@ function App() {
     <main className={`app-layout theme-${theme}`}>
       {/* Top Bar */}
       <header className="topbar">
-        <h1>Secure Wipe</h1>
+        <h1>Trace Zero</h1>
       </header>
 
       {/* Sidebar */}
@@ -363,6 +368,24 @@ function App() {
             <span className="sidebar-icon">💿</span>
             <span>Bootable USB/ISO</span>
           </div>
+          
+          <div
+            className="sidebar-item"
+            onClick={() => setShowPxeBootModal(true)}
+          >
+            <span className="sidebar-icon">🌐</span>
+            <span>PXE Network Boot</span>
+          </div>
+          
+          <div
+            className="sidebar-item"
+            onClick={() => setShowGeofenceModal(true)}
+          >
+            <span className="sidebar-icon">🗺️</span>
+            <span>Geofenced Lock</span>
+          </div>
+          
+
 
           <div className="sidebar-item" onClick={() => setShowSettings(true)}>
             <MoreVertical className="sidebar-icon" />
@@ -444,7 +467,7 @@ function App() {
           <Certificates userId={currentUserId} />
         )}
 
-        {currentPage === "sensitive-files" && (
+        {currentPage === "sensitive-files" && currentUserId && (
           <SensitiveFiles 
             sensitiveFiles={sensitiveFiles}
             setSensitiveFiles={setSensitiveFiles}
@@ -452,6 +475,7 @@ function App() {
             setFilesLocked={setFilesLocked}
             setPinAttempts={setPinAttempts}
             currentUserId={currentUserId}
+            theme={theme}
           />
         )}
 
@@ -529,23 +553,7 @@ function App() {
         <div className="modal">
           <div className="modal-content">
             <h2>Settings</h2>
-            <div className="settings-section">
-              <label>Theme</label>
-              <div className="theme-toggle">
-                <div
-                  className={`theme-icon sun-icon ${
-                    theme === "green-soft" ? "selected" : ""
-                  }`}
-                  onClick={() => setTheme("green-soft")}
-                ></div>
-                <div
-                  className={`theme-icon moon-icon ${
-                    theme === "dark-professional" ? "selected" : ""
-                  }`}
-                  onClick={() => setTheme("dark-professional")}
-                ></div>
-              </div>
-            </div>
+
             <div className="settings-section">
               <label>Privacy & Security</label>
               <div className="privacy-security-options">
@@ -563,30 +571,9 @@ function App() {
 </div>
                 <div
                   className="privacy-option"
-                  onClick={async () => {
+                  onClick={() => {
                     if (filesLocked) {
-                      const pin = prompt("Enter PIN to unlock sensitive files:");
-                      if (pin) {
-                        try {
-                          const isValid = await invoke<boolean>("verify_user_pin", {
-                            userId: currentUserId,
-                            pin: pin,
-                          });
-                          if (isValid) {
-                            await invoke("unlock_sensitive_files", {
-                              filePaths: sensitiveFiles,
-                              userId: currentUserId
-                            });
-                            setFilesLocked(false);
-                            setPinAttempts(0);
-                            alert("🔓 Sensitive files have been unlocked!");
-                          } else {
-                            alert("❌ Incorrect PIN!");
-                          }
-                        } catch (err) {
-                          alert(`Error: ${err}`);
-                        }
-                      }
+                      setShowUnlockModal(true);
                     }
                   }}
                 >
@@ -598,7 +585,7 @@ function App() {
               </div>
             </div>
             <div className="modal-actions">
-              <button onClick={() => setShowSettings(false)}>Close</button>
+              <button className={`modal-close-btn theme-${theme}`} onClick={() => setShowSettings(false)}>Close</button>
             </div>
           </div>
         </div>
@@ -906,11 +893,28 @@ function App() {
         show={showBootableModal} 
         onClose={() => setShowBootableModal(false)} 
       />
+      
+      {/* PXE Boot Modal */}
+      <PxeBootModal 
+        isOpen={showPxeBootModal} 
+        onClose={() => setShowPxeBootModal(false)}
+        theme={theme}
+      />
+      
+      {/* Geofence Modal */}
+      <GeofenceModal 
+        isOpen={showGeofenceModal} 
+        onClose={() => setShowGeofenceModal(false)}
+        sensitiveFiles={sensitiveFiles}
+        userId={currentUserId || 0}
+      />
+      
+
 
       {/* Help Modal */}
       {showHelpModal && (
         <div className="modal">
-          <div className="modal-content" style={{maxWidth: '800px', width: '90vw'}}>
+          <div className="modal-content" style={{maxWidth: '800px', width: '90vw', maxHeight: '80vh', overflowY: 'auto'}}>
             <h2>🛡️ Secure Wipe Features</h2>
             
             <div className="wipe-modes">
@@ -947,6 +951,12 @@ function App() {
                 <br />
                 <span>Create bootable media for OS-independent secure wiping with complete hardware access</span>
               </div>
+              
+              <div className="wipe-option">
+                <strong>🌐 PXE Network Boot</strong>
+                <br />
+                <span>Deploy network-based wiping for 1000+ devices simultaneously. Automated PXE server with client monitoring and certificate collection</span>
+              </div>
 
               <div className="wipe-option">
                 <strong>🔐 Security Features</strong>
@@ -956,7 +966,7 @@ function App() {
             </div>
 
             <div className="modal-actions">
-              <button onClick={() => setShowHelpModal(false)}>Close</button>
+              <button className={`modal-close-btn theme-${theme}`} onClick={() => setShowHelpModal(false)}>Close</button>
             </div>
           </div>
         </div>
@@ -1299,136 +1309,6 @@ function Certificates({ userId }: { userId: number }) {
   );
 }
 
-// Sensitive Files Component
-function SensitiveFiles({
-  sensitiveFiles,
-  setSensitiveFiles,
-  filesLocked,
-  setFilesLocked,
-  setPinAttempts,
-  currentUserId,
-}: {
-  sensitiveFiles: string[];
-  setSensitiveFiles: React.Dispatch<React.SetStateAction<string[]>>;
-  filesLocked: boolean;
-  setFilesLocked: React.Dispatch<React.SetStateAction<boolean>>;
-  setPinAttempts: React.Dispatch<React.SetStateAction<number>>;
-  currentUserId: number | null;
-}) {
-  const handleAddFiles = async () => {
-    try {
-      const selectedFiles = await invoke<string[]>("select_files");
-      setSensitiveFiles(prev => [...prev, ...selectedFiles]);
-    } catch (err) {
-      alert(`Error selecting files: ${err}`);
-    }
-  };
 
-  const handleRemoveFile = (index: number) => {
-    setSensitiveFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleUnlockFiles = async () => {
-    const pin = prompt("Enter PIN to unlock sensitive files:");
-    if (pin) {
-      try {
-        const isValid = await invoke<boolean>("verify_user_pin", {
-          userId: currentUserId,
-          pin: pin,
-        });
-        if (isValid) {
-          await invoke("unlock_sensitive_files", {
-            filePaths: sensitiveFiles,
-            userId: currentUserId
-          });
-          setFilesLocked(false);
-          setPinAttempts(0);
-          alert("🔓 Sensitive files have been unlocked!");
-        } else {
-          alert("❌ Incorrect PIN!");
-        }
-      } catch (err) {
-        alert(`Error: ${err}`);
-      }
-    }
-  };
-
-  return (
-    <div className="sensitive-files-page">
-      <div className="sensitive-files-header">
-        <h2>🔒 Sensitive Files Protection</h2>
-        <p>Manage files that will be automatically locked after 3 failed PIN attempts during wipe operations.</p>
-        
-        <div className="status-indicator">
-          <div className={`status-badge ${filesLocked ? 'locked' : 'unlocked'}`}>
-            {filesLocked ? '🔒 Files Locked' : '🔓 Files Unlocked'}
-          </div>
-        </div>
-      </div>
-
-      <div className="sensitive-files-actions">
-        <button className="add-files-btn" onClick={handleAddFiles}>
-          <span className="btn-icon">📁</span>
-          Add Files
-        </button>
-        
-        {filesLocked && (
-          <button className="unlock-btn" onClick={handleUnlockFiles}>
-            <span className="btn-icon">🔓</span>
-            Unlock Files
-          </button>
-        )}
-      </div>
-
-      <div className="files-container">
-        {sensitiveFiles.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">📁</div>
-            <h3>No Sensitive Files Selected</h3>
-            <p>Click "Add Files" to select files you want to protect.</p>
-          </div>
-        ) : (
-          <div className="files-grid">
-            {sensitiveFiles.map((file, index) => {
-              const fileName = file.split(/[\\\/]/).pop() || file;
-              const filePath = file.replace(fileName, '');
-              
-              return (
-                <div key={index} className={`file-card ${filesLocked ? 'locked' : ''}`}>
-                  <div className="file-icon">
-                    {filesLocked ? '🔒' : '📄'}
-                  </div>
-                  <div className="file-details">
-                    <div className="file-name">{fileName}</div>
-                    <div className="file-path">{filePath}</div>
-                  </div>
-                  <button 
-                    className="remove-btn"
-                    onClick={() => handleRemoveFile(index)}
-                    disabled={filesLocked}
-                  >
-                    ✕
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="info-section">
-        <div className="info-card">
-          <h3>ℹ️ How It Works</h3>
-          <ul>
-            <li>Select sensitive files you want to protect</li>
-            <li>Files are automatically locked after 3 failed PIN attempts</li>
-            <li>Use your confirmation PIN to unlock files</li>
-            <li>Locked files cannot be accessed until unlocked</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default App;

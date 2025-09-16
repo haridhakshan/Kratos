@@ -16,10 +16,13 @@ use machine_uid::get;       // for device UID
 use uuid::Uuid;             // for Uuid::new_v4()
 use sha2::{Sha256, Digest};
 use std::io::Write;
-use chrono::{Utc, Duration, DateTime, SubsecRound};
+use chrono::{Utc, Duration, SubsecRound};
 
 mod bootable;
 mod iso_builder;
+mod pxe_server;
+mod geofence;
+
 
 
 
@@ -820,34 +823,72 @@ async fn verify_certificate_pdf(
 }
 
 #[command]
-async fn select_files() -> Result<Vec<String>, String> {
-    let files = rfd::FileDialog::new()
-        .pick_files()
-        .ok_or("No files selected")?;
+async fn select_file() -> Result<String, String> {
+    let file = rfd::FileDialog::new()
+        .pick_file()
+        .ok_or("No file selected")?;
     
-    Ok(files.into_iter()
-        .map(|path| path.to_string_lossy().to_string())
-        .collect())
+    Ok(file.to_string_lossy().to_string())
+}
+
+#[command]
+async fn select_folder() -> Result<String, String> {
+    let folder = rfd::FileDialog::new()
+        .pick_folder()
+        .ok_or("No folder selected")?;
+    
+    Ok(folder.to_string_lossy().to_string())
 }
 
 #[command]
 async fn lock_sensitive_files(
     file_paths: Vec<String>,
-    user_id: i32,
+    _user_id: i32,
 ) -> Result<(), String> {
+    use std::path::Path;
+    
     for file_path in &file_paths {
-        let path = std::path::Path::new(file_path);
+        let path = Path::new(file_path);
         
         if OS == "windows" {
-            // Windows: Remove all permissions except for system
-            Command::new("icacls")
-                .args(&[file_path, "/deny", "Everyone:F"])
-                .status()
-                .map_err(|e| format!("Failed to lock file {}: {}", file_path, e))?;
+            if path.exists() {
+                // Multiple locking approaches for maximum security
+                
+                // 1. Take ownership
+                let _ = Command::new("takeown")
+                    .args(&["/f", file_path, "/r", "/d", "y"])
+                    .output();
+                
+                // 2. Remove inheritance
+                let _ = Command::new("icacls")
+                    .args(&[file_path, "/inheritance:r", "/T"])
+                    .output();
+                
+                // 3. Deny current user
+                let username = std::env::var("USERNAME").unwrap_or_default();
+                let _ = Command::new("icacls")
+                    .args(&[file_path, "/deny", &format!("{}:F", username), "/T"])
+                    .output();
+                
+                // 4. Deny Everyone
+                let _ = Command::new("icacls")
+                    .args(&[file_path, "/deny", "Everyone:F", "/T"])
+                    .output();
+                
+                // 5. Deny Administrators
+                let _ = Command::new("icacls")
+                    .args(&[file_path, "/deny", "Administrators:F", "/T"])
+                    .output();
+                
+                // 6. Set read-only + system + hidden attributes
+                let _ = Command::new("attrib")
+                    .args(&["+R", "+S", "+H", file_path])
+                    .output();
+            }
         } else {
             // Linux/Unix: Change permissions to 000
             Command::new("chmod")
-                .args(&["000", file_path])
+                .args(&["-R", "000", file_path])
                 .status()
                 .map_err(|e| format!("Failed to lock file {}: {}", file_path, e))?;
         }
@@ -859,10 +900,10 @@ async fn lock_sensitive_files(
 #[command]
 async fn unlock_sensitive_files(
     file_paths: Vec<String>,
-    user_id: i32,
+    _user_id: i32,
 ) -> Result<(), String> {
     for file_path in &file_paths {
-        let path = std::path::Path::new(file_path);
+        let _path = std::path::Path::new(file_path);
         
         if OS == "windows" {
             // Windows: Restore full control permissions
@@ -1009,7 +1050,6 @@ async fn main() {
     download_certificate,
     download_certificate_pdf,
     verify_certificate_pdf,
-    select_files,
     lock_sensitive_files,
     unlock_sensitive_files,
     change_user_password,
@@ -1018,7 +1058,22 @@ async fn main() {
     bootable::create_bootable_usb,
     bootable::list_usb_drives,
     iso_builder::create_iso,
-    iso_builder::build_bootable_environment
+    iso_builder::build_bootable_environment,
+    pxe_server::start_pxe_server,
+    pxe_server::stop_pxe_server,
+    pxe_server::get_client_statuses,
+    pxe_server::validate_pxe_config,
+    geofence::scan_wifi_networks,
+    geofence::setup_geofence,
+    geofence::start_geofence_monitoring,
+    geofence::stop_geofence_monitoring,
+    geofence::get_geofence_status,
+    geofence::unlock_with_pin,
+    geofence::lock_all_system_files,
+    select_file,
+    select_folder,
+
+
 ])
 
 
