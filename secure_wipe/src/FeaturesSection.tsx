@@ -24,7 +24,7 @@ export default function FeaturesSection() {
     },
     {
       title: "Audit-Ready Certificates",
-      description: "Each wipe generates a verifiable certificate for compliance.",
+      description: "Each wipe generates a verifiable certificate for compliance.Open Audit Transparency",
       icon: "/icons/certificate.png",
     },
     {
@@ -32,15 +32,10 @@ export default function FeaturesSection() {
       description: "Delete specific sensitive files without affecting the system.",
       icon: "/icons/file.png",
     },
-    {
-      title: "Open Audit Transparency",
-      description: "Ensure full transparency. Every erasure is tracked, verifiable, and accessible.",
-      icon: "/icons/file.png",
-    },
   ];
 
   return (
-    <section className="features">
+    <section className="features" id="solutions">
       <h2>Secure Data Erasure Solutions for Every Need</h2>
       <p>
         TraceZero empowers organizations and individuals with certified, scalable, and simple data wiping tools.
@@ -50,8 +45,10 @@ export default function FeaturesSection() {
         {features.map((f, i) => (
           <div key={i} className="feature-card">
             <img src={f.icon} alt={f.title} />
+            <div className="feature-text">
             <h3>{f.title}</h3>
             <p>{f.description}</p>
+            </div>
           </div>
         ))}
       </div>

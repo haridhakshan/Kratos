@@ -24,6 +24,7 @@ interface ClientStatus {
 interface PxeBootModalProps {
   isOpen: boolean;
   onClose: () => void;
+  theme?: "light" | "dark" | "rose-cream";
 }
 
 export default function PxeBootModal({ isOpen, onClose }: PxeBootModalProps) {

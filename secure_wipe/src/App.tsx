@@ -5,6 +5,10 @@ import "./App.css";
 import Register from "./Register";
 import Login from "./Login";
 import BootableModal from "./BootableModal";
+import LandingPage from "./LandingPage";
+import SensitiveFiles from "./SensitiveFiles";
+import PxeBootModal from "./PxeBootModal";
+import GeofenceModal from "./GeofenceModal";
 
 interface Drive {
   name: string;
@@ -243,6 +247,7 @@ function App() {
       <Register
         onSuccess={handleRegisterSuccess}
         onSwitch={() => setAuthState("login")}
+        onBack={()=>setAuthState("landing")}
       />
     );
   }
@@ -252,6 +257,7 @@ function App() {
       <Login
         onSuccess={handleLoginSuccess}
         onSwitch={() => setAuthState("register")}
+        onBack={()=>setAuthState("landing")}
       />
     );
   }

@@ -2,10 +2,10 @@ import React from "react";
 
 const About = () => {
   return (
-    <section className="whyuse-container">
+    <section className="whyuse-container" id="about">
       {/* Left Image */}
       <div className="whyuse-image">
-        <img src="/assets/secure-wipe.png" alt="Secure Wiping" />
+        <img src="/images/secure-wipe.png" alt="Secure Wiping" />
       </div>
 
       {/* Right Content */}

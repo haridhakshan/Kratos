@@ -3,7 +3,10 @@ import "./App.css";
 import About from "./About";
 import FeaturesSection from "./FeaturesSection";
 
-export default function LandingPage() {
+interface LoginModalProps {
+  onLogin: () => void;
+}
+export default function LandingPage({onLogin}: LoginModalProps) {
   const slides = [
     {
       title: "Tamper-Proof Certificates",
@@ -23,7 +26,7 @@ export default function LandingPage() {
     {
       title: "One-Click Simplicity",
       description: "Designed for enterprises & individuals with an easy one-click erasure process.",
-      image: "/images/oneclick.png",
+      image: "/images/oneClick.png",
     },
     {
       title: "Audit-Ready Reports",
@@ -62,7 +65,7 @@ export default function LandingPage() {
           <h2>{slides[current].title}</h2>
           <p>{slides[current].description}</p>
           <div className="buttons">
-            <button className="button-primary">Login / Register</button>
+            <button className="button-primary" onClick={onLogin}>Login / Register</button>
             <button className="button-secondary">Download App</button>
           </div>
         </div>
@@ -82,13 +85,13 @@ export default function LandingPage() {
       </div>
       <About/>
       <FeaturesSection/>
-      <footer className="footer">
-        <nav className="footer-links">
+      <footer className="LandingFooter" id="contact">
+        <nav className="LandingFooter-links">
           <a href="#">About</a>
           <a href="#">Contact</a>
           <a href="#">Help</a>
         </nav>
-        <small>
+        <small style={{color:"red"}}>
           © {new Date().getFullYear()} Secure Wipe Utility. All rights reserved.
         </small>
       </footer>
